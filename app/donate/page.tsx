@@ -22,12 +22,9 @@ import { ContactFooter } from "@/components/contact-footer"
 // If this file is a Named Export, change this to: import { MissionTabs } from "..."
 import MissionTabs from "@/components/mission-tabs" 
 
-// ✅ FIXED: Robust dynamic import for Starfield that handles both Named and Default exports
+// ✅ FIXED: Dynamic import for Starfield named export
 const Starfield = dynamic(
-  () => import("@/components/starfield").then((mod) => {
-    // Return the specific export if it exists, otherwise fallback to default
-    return mod.Starfield || mod.default
-  }), 
+  () => import("@/components/starfield").then((mod) => mod.Starfield), 
   { 
     ssr: false,
     loading: () => <div className="fixed inset-0 bg-[#0A0E27]" />

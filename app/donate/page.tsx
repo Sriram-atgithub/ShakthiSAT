@@ -1,7 +1,6 @@
 "use client"
 
-import { Suspense, lazy } from "react"
-import dynamic from "next/dynamic" // Implemented dynamic import
+import dynamic from "next/dynamic"
 import { 
   Rocket, 
   Globe, 
@@ -10,7 +9,7 @@ import {
   Satellite, 
   CreditCard, 
   Landmark,
-  UploadCloud
+  CloudUpload // ✅ FIXED: Changed from UploadCloud (deprecated) to CloudUpload
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,28 +18,21 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { ContactFooter } from "@/components/contact-footer"
 
-// ✅ FIX 1: Dynamically load Starfield with SSR disabled to prevent Hydration Freeze
-const Starfield = dynamic(() => import("@/components/starfield").then((mod) => mod.Starfield), { 
-  ssr: false,
-  loading: () => <div className="fixed inset-0 bg-[#0A0E27]" /> // Instant dark background while loading
-})
+// ✅ FIXED: Use standard import for MissionTabs to prevent build errors.
+// If this file is a Named Export, change this to: import { MissionTabs } from "..."
+import MissionTabs from "@/components/mission-tabs" 
 
-// ✅ FIX 2: Lazy load heavy interactive tabs
-const LazyMissionTabs = lazy(() => import("@/components/mission-tabs"))
-
-// ✅ FIX 3: Create a Skeleton Loader to prevent Layout Shift while tabs load
-function TabsSkeleton() {
-  return (
-    <div className="w-full space-y-4 animate-pulse">
-      <div className="flex gap-2 justify-center mb-8">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="h-10 w-32 bg-white/10 rounded-md" />
-        ))}
-      </div>
-      <div className="h-64 bg-white/5 rounded-xl border border-white/10" />
-    </div>
-  )
-}
+// ✅ FIXED: Robust dynamic import for Starfield that handles both Named and Default exports
+const Starfield = dynamic(
+  () => import("@/components/starfield").then((mod) => {
+    // Return the specific export if it exists, otherwise fallback to default
+    return mod.Starfield || mod.default
+  }), 
+  { 
+    ssr: false,
+    loading: () => <div className="fixed inset-0 bg-[#0A0E27]" />
+  }
+)
 
 export default function DonationPage() {
   return (
@@ -102,11 +94,9 @@ export default function DonationPage() {
             </div>
           </div>
 
-          {/* Mission Tabs Section - Wrapped in Suspense with Skeleton */}
+          {/* Mission Tabs Section - Standard Import (Removed Suspense) */}
           <section className="mb-20">
-            <Suspense fallback={<TabsSkeleton />}>
-              <LazyMissionTabs />
-            </Suspense>
+            <MissionTabs />
           </section>
 
           {/* Why Your Donation Matters */}
@@ -305,7 +295,8 @@ export default function DonationPage() {
                       <div className="flex items-center justify-center w-full">
                         <label htmlFor="payment-proof" className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-white/5 border-white/20 transition-colors">
                           <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                            <UploadCloud className="w-8 h-8 mb-3 text-muted-foreground" />
+                            {/* ✅ FIXED: Use correct icon */}
+                            <CloudUpload className="w-8 h-8 mb-3 text-muted-foreground" />
                             <p className="text-sm text-muted-foreground"><span className="font-semibold">Click to upload</span> or drag and drop</p>
                           </div>
                           <Input id="payment-proof" type="file" className="hidden" accept="image/*,.pdf" />

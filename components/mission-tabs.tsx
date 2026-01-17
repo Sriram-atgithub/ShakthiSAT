@@ -1,16 +1,80 @@
 "use client"
+
+import { useState } from "react"
+import dynamic from "next/dynamic"
+import { Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Starfield } from "@/components/starfield"
-import MissionTabs from "@/components/mission-tabs"
+
+// ✅ CRITICAL FIX: Dynamic imports to prevent blocking
+const Starfield = dynamic(
+  () => import("@/components/starfield").then((mod) => mod.Starfield),
+  { 
+    ssr: false,
+    loading: () => null // Don't block render
+  }
+)
+
+const MissionTabs = dynamic(
+  () => import("@/components/mission-tabs"),
+  {
+    ssr: false, // ✅ IMPORTANT: Disable SSR if it's causing issues
+    loading: () => (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-3 text-muted-foreground">Loading mission details...</span>
+      </div>
+    )
+  }
+)
 
 export default function DonationPage() {
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [fileName, setFileName] = useState<string>("")
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setFileName(file.name)
+    }
+  }
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+    
+    try {
+      // Add your form submission logic here
+      const formData = new FormData(e.currentTarget)
+      
+      // Example: Send to API
+      // await fetch('/api/donations', {
+      //   method: 'POST',
+      //   body: formData
+      // })
+      
+      await new Promise(resolve => setTimeout(resolve, 1000)) // Simulate API call
+      
+      alert("Thank you! Your details have been submitted.")
+      e.currentTarget.reset()
+      setFileName("")
+    } catch (error) {
+      console.error("Submission error:", error)
+      alert("There was an error submitting your details. Please try again.")
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[#0A0E27] text-foreground relative overflow-x-hidden">
-      <Starfield />
+      {/* ✅ Background renders independently */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <Starfield />
+      </div>
 
       <div className="relative z-10">
         <section className="container mx-auto px-4 py-16 md:py-24">
@@ -58,7 +122,7 @@ export default function DonationPage() {
           </div>
         </section>
 
-        {/* Mission Tabs Section */}
+        {/* ✅ Mission Tabs with proper loading - won't block */}
         <section className="container mx-auto px-4 py-16">
           <MissionTabs />
         </section>
@@ -367,7 +431,7 @@ export default function DonationPage() {
           </div>
         </section>
 
-        {/* After You Donate Form */}
+        {/* ✅ After You Donate Form - With proper state management */}
         <section className="container mx-auto px-4 py-16">
           <div className="max-w-3xl mx-auto">
             <h2 className="text-3xl md:text-5xl font-bold mb-8 gradient-text text-center">After You Donate</h2>
@@ -378,43 +442,100 @@ export default function DonationPage() {
                 carried as part of the Mission ShakthiSAT journey to the Moon.
               </p>
 
-              <form className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
                   <Label htmlFor="donor-name">Donor Name</Label>
-                  <Input id="donor-name" placeholder="Enter your full name" className="bg-muted/50" />
+                  <Input 
+                    id="donor-name" 
+                    name="name"
+                    placeholder="Enter your full name" 
+                    className="bg-muted/50" 
+                    required
+                    disabled={isSubmitting}
+                  />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="donor-country">Donor Country</Label>
-                  <Input id="donor-country" placeholder="Enter your country" className="bg-muted/50" />
+                  <Input 
+                    id="donor-country" 
+                    name="country"
+                    placeholder="Enter your country" 
+                    className="bg-muted/50" 
+                    required
+                    disabled={isSubmitting}
+                  />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="donor-mobile">Donor Mobile Number</Label>
-                  <Input id="donor-mobile" type="tel" placeholder="Enter your mobile number" className="bg-muted/50" />
+                  <Input 
+                    id="donor-mobile" 
+                    name="mobile"
+                    type="tel" 
+                    placeholder="Enter your mobile number" 
+                    className="bg-muted/50" 
+                    required
+                    disabled={isSubmitting}
+                  />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="donor-email">Donor Email ID</Label>
-                  <Input id="donor-email" type="email" placeholder="Enter your email address" className="bg-muted/50" />
+                  <Input 
+                    id="donor-email" 
+                    name="email"
+                    type="email" 
+                    placeholder="Enter your email address" 
+                    className="bg-muted/50" 
+                    required
+                    disabled={isSubmitting}
+                  />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="donor-address">Donor Address</Label>
-                  <Textarea id="donor-address" placeholder="Enter your full address" className="bg-muted/50 min-h-24" />
+                  <Textarea 
+                    id="donor-address" 
+                    name="address"
+                    placeholder="Enter your full address" 
+                    className="bg-muted/50 min-h-24" 
+                    required
+                    disabled={isSubmitting}
+                  />
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="payment-proof">Proof of Donation: Payment Info (PDF, screenshot images)</Label>
-                  <Input id="payment-proof" type="file" accept="image/*,.pdf" className="bg-muted/50" />
+                  <Input 
+                    id="payment-proof" 
+                    name="proof"
+                    type="file" 
+                    accept="image/*,.pdf" 
+                    className="bg-muted/50" 
+                    onChange={handleFileChange}
+                    required
+                    disabled={isSubmitting}
+                  />
+                  {fileName && (
+                    <p className="text-sm text-primary mt-1">Selected: {fileName}</p>
+                  )}
                 </div>
 
                 <Button
                   type="submit"
                   size="lg"
                   className="w-full bg-primary text-primary-foreground hover:bg-primary/90 text-lg font-semibold"
+                  disabled={isSubmitting}
                 >
-                  Submit Details
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    "Submit Details"
+                  )}
                 </Button>
               </form>
 
